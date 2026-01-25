@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
 
 
 class Settings(BaseSettings):
@@ -9,5 +8,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print(f"Current directory: {os.getcwd()}")  # Добавьте эту строку
-print(f"DB_URL: {settings.DB_URL}")  # И эту
