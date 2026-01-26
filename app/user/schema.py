@@ -1,11 +1,13 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
-class UserAdd(BaseModel):
-    name: str
-    email: EmailStr
-    phone_number: str
-    password: str
+class UserAddSchema(BaseModel):
+    name: str = Field(..., max_length=20, min_length=1)
+    email: EmailStr = Field(...)
+    phone_number: str = Field(..., min_length=8, max_length=20)
+    password: str = Field(..., min_length=8)
 
-class UserSchema(UserAdd):
-    id: int
+
+class UserLoginSchema(BaseModel):
+    email: EmailStr = Field(...)
+    password: str = Field(...)

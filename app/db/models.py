@@ -39,12 +39,12 @@ class HeroModel(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Флаг активности
 
 
-class UserModel(Base):  # Изменено имя с user на UserModel
+class UserModel(Base):
     """Таблица для хранения данных пользователя"""
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
-    email: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     phone_number: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
-    password: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    password: Mapped[str] = mapped_column(String(), nullable=False)

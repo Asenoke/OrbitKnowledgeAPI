@@ -1,11 +1,11 @@
-import dotenv
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from app.db.database import create_db
 from app.user.routers import router as user_router
 
-dotenv.load_dotenv()
+load_dotenv()
 app = FastAPI(title="Astronomy API")
 
 app.include_router(user_router)
