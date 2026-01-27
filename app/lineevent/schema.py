@@ -1,11 +1,30 @@
-from pydantic import BaseModel, Field
+from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class LineEventAddSchema(BaseModel):
-    year: int = Field(...)
-    title: str = Field(...)
-    description: str = Field(...)
+    year: int = Field(..., description="Год события")
+    title: str = Field(..., max_length=200, description="Заголовок события")
+    description: str = Field(..., description="Описание события")
+
+    @field_validator('year')
+    @classmethod
+    def validate_year(cls, v):
+        if v < 1000 or v > 3000:
+            raise ValueError('Год должен быть в диапазоне от 1000 до 3000')
+        return v
 
 
-class LineEventSchema(LineEventAddSchema):
-    id: int
+class LineEventUpdateSchema(BaseModel):
+    year: Optional[int] = Field(None, description="Год события")
+    title: Optional[str] = Field(None, max_length=200, description="Заголовок события")
+    description: Optional[str] = Field(None, description="Описание события")
+
+    @field_validator('year')
+    @classmethod
+    def validate_year(cls, v):
+        if v is not None:
+            if v < 1000 or v > 3000:
+                raise ValueError('Год должен быть в диапазоне от 1000 до 3000')
+        return v
