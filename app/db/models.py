@@ -1,11 +1,17 @@
 from typing import Optional
+import enum
 
-from sqlalchemy import String, Boolean, Text, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Column, Integer, String, Enum as SQLEnum, Text, Boolean
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class UserRole(enum.Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 
 class TimelineEventModel(Base):
@@ -16,7 +22,6 @@ class TimelineEventModel(Base):
     year: Mapped[str] = mapped_column(String(10), nullable=False, index=True)  # "1903"
     title: Mapped[str] = mapped_column(String(200), nullable=False)  # "Первый полёт братьев Райт"
     description: Mapped[str] = mapped_column(Text, nullable=False)  # Описание события
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Флаг активности
 
 
 class HeroModel(Base):
@@ -48,3 +53,4 @@ class UserModel(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     phone_number: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     password: Mapped[str] = mapped_column(String(), nullable=False)
+    role = Column(SQLEnum(UserRole), default=UserRole.USER, nullable=False)
