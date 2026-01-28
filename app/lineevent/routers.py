@@ -7,7 +7,7 @@ from starlette import status
 
 from app.db.database import get_session
 from app.db.models import TimelineEventModel
-from app.dependencies.dependencies import require_admin, require_user
+from app.dependencies.dependencies import require_admin
 from app.lineevent.schema import LineEventAddSchema, LineEventUpdateSchema
 
 router = APIRouter(prefix="/lineevent", tags=["Работа с данными для ленты времени"])

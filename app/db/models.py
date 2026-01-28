@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, List
 import enum
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Column, Integer, String, Enum as SQLEnum, Text, Boolean
+from sqlalchemy import Column, Integer, String, Enum as SQLEnum, Text, Boolean, JSON
 
 
 class Base(DeclarativeBase):
@@ -29,19 +29,21 @@ class HeroModel(Base):
     __tablename__ = "heroes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)  # "Юрий Гагарин"
-    role: Mapped[str] = mapped_column(String(100), nullable=False)  # "Первый человек в космосе"
-    description: Mapped[str] = mapped_column(Text, nullable=False)  # Краткое описание
-    image_url: Mapped[Optional[str]] = mapped_column(String(500))  # URL изображения
-    era: Mapped[Optional[str]] = mapped_column(String(50))  # "XX век"
-    tags: Mapped[Optional[str]] = mapped_column(String(200))  # "космонавт, СССР, рекорд"
 
-    # Дополнительные данные для модального окна
-    birth_date: Mapped[Optional[str]] = mapped_column(String(50))  # "9 марта 1934"
-    death_date: Mapped[Optional[str]] = mapped_column(String(50))  # "27 марта 1968"
-    achievements: Mapped[Optional[str]] = mapped_column(Text)  # Основные достижения
-    biography: Mapped[Optional[str]] = mapped_column(Text)  # Полная биография
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Флаг активности
+    # Основные данные для карточки
+    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    image_url: Mapped[Optional[str]] = mapped_column(String(500))
+    era: Mapped[str] = mapped_column(String(50), nullable=False, default="XX век")
+    tags: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)  # ["космонавт", "СССР", "рекорд"]
+
+    # Для модального окна
+    birth_date: Mapped[Optional[str]] = mapped_column(String(50))
+    death_date: Mapped[Optional[str]] = mapped_column(String(50))
+    achievements: Mapped[Optional[str]] = mapped_column(Text)
+    biography: Mapped[Optional[str]] = mapped_column(Text)
+
 
 
 class UserModel(Base):

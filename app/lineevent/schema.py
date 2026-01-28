@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class LineEventAddSchema(BaseModel):
-    year: int = Field(..., description="Год события")
-    title: str = Field(..., max_length=200, description="Заголовок события")
-    description: str = Field(..., description="Описание события")
+    year: int = Field(...)
+    title: str = Field(..., max_length=200)
+    description: str = Field(...)
 
     @field_validator('year')
     @classmethod
