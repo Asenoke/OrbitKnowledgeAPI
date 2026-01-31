@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
+# Класс Settings (извлечение переменных окружения из .env файла)
 class Settings(BaseSettings):
     DB_URL: str
     JWT_SECRET_KEY: str

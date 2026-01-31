@@ -7,14 +7,15 @@ from app.db.models import UserModel, UserRole
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+# создание экземпляра HTTPBearer
 security = HTTPBearer()
 
-
+# Функция (зависимость) для получения текущего пользователя
 async def get_current_user(
         credentials=Depends(security),
         session: AsyncSession = Depends(get_session)
 ) -> UserModel:
-    """Зависимость для получения текущего пользователя"""
+
     token = credentials.credentials
 
     payload = verify_token(token)
@@ -44,10 +45,8 @@ async def get_current_user(
 
     return user
 
-
+# функция (зависимость) для проверки роли
 def require_role(required_role: UserRole):
-    """Зависимость для проверки роли пользователя"""
-
     async def role_checker(current_user: UserModel = Depends(get_current_user)):
         if current_user.role != required_role:
             raise HTTPException(
@@ -59,10 +58,8 @@ def require_role(required_role: UserRole):
     return role_checker
 
 
-# Альтернатива: проверка на одну из нескольких ролей
+# Функция проверки на одну из нескольких ролей
 def require_any_role(allowed_roles: List[UserRole]):
-    """Зависимость для проверки на наличие одной из разрешенных ролей"""
-
     async def role_checker(current_user: UserModel = Depends(get_current_user)):
         if current_user.role not in allowed_roles:
             raise HTTPException(
@@ -74,7 +71,7 @@ def require_any_role(allowed_roles: List[UserRole]):
     return role_checker
 
 
-# Короткие алиасы для удобства
+# Объявление
 require_admin = require_role(UserRole.ADMIN)
 require_user = require_role(UserRole.USER)
 require_admin_or_user = require_any_role([UserRole.ADMIN, UserRole.USER])

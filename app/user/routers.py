@@ -25,10 +25,9 @@ sessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 # ============ ПУБЛИЧНЫЕ ЭНДПОИНТЫ (доступны всем) ============
 
+# Регистрация нового пользователя (по умолчанию роль USER)
 @public_router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(user: UserAddSchema, session: sessionDep):
-    """Регистрация нового пользователя (по умолчанию роль USER)"""
-    # Проверяем, существует ли пользователь с таким email
     existing_user = await session.execute(
         select(UserModel).where(UserModel.email == user.email)
     )
@@ -67,23 +66,20 @@ async def register(user: UserAddSchema, session: sessionDep):
         "role": new_user.role.value
     }
 
-
+# Вход в систему
 @public_router.post("/login")
 async def login(user: UserLoginSchema, session: sessionDep):
-    """Вход в систему"""
-    # Ищем пользователя по email
     stmt = select(UserModel).where(UserModel.email == user.email)
     result = await session.execute(stmt)
     db_user = result.scalar_one_or_none()
 
-    # Если пользователь не найден ИЛИ пароль неверный
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный email или пароль"
         )
 
-    # Создаем JWT токен с информацией о роли
+
     access_token = create_access_token(
         data={
             "sub": db_user.email,
@@ -93,17 +89,16 @@ async def login(user: UserLoginSchema, session: sessionDep):
         }
     )
 
-    # Возвращаем токен с ролью
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "role": db_user.role.value
     }
 
-
+# выход из системы (клиентская операция)
 @public_router.post("/logout")
 async def logout():
-    """Выход из системы (клиентская операция)"""
     return {
         "status": "success",
         "message": "Вы вышли из аккаунта"
@@ -112,9 +107,9 @@ async def logout():
 
 # ============ ЭНДПОИНТЫ ДЛЯ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ И АДМИНОВ ============
 
+# Получение профиля текущего пользователя
 @user_router.get("/profile")
 async def get_profile(current_user: UserModel = Depends(get_current_user)):
-    """Получение профиля текущего пользователя"""
     return {
         "id": current_user.id,
         "name": current_user.name,
@@ -124,6 +119,7 @@ async def get_profile(current_user: UserModel = Depends(get_current_user)):
     }
 
 
+# Обновление профиля пользователя
 @user_router.put("/profile")
 async def update_profile(
         update_data: UserUpdateSchema,
@@ -131,13 +127,11 @@ async def update_profile(
         current_user: UserModel = Depends(get_current_user),
 
 ):
-    """Обновление профиля пользователя"""
-    # Обновляем только предоставленные поля
+
     if update_data.name is not None:
         current_user.name = update_data.name
 
     if update_data.phone_number is not None:
-        # Проверяем уникальность номера телефона
         existing_phone = await session.execute(
             select(UserModel).where(
                 UserModel.phone_number == update_data.phone_number,
@@ -151,7 +145,7 @@ async def update_profile(
             )
         current_user.phone_number = update_data.phone_number
 
-    # Обновление пароля (если предоставлен)
+
     if update_data.password is not None:
         current_user.password = hash_password(update_data.password)
 
@@ -171,13 +165,14 @@ async def update_profile(
     }
 
 
+# Удаление учётной записи пользователя
 @user_router.delete("/profile")
 async def delete_profile(
         session: sessionDep,
         current_user: UserModel = Depends(get_current_user)
 
 ):
-    """Удаление своего профиля"""
+
     await session.delete(current_user)
     await session.commit()
 
@@ -188,6 +183,8 @@ async def delete_profile(
 
 
 # ============ ЭНДПОИНТЫ ТОЛЬКО ДЛЯ АДМИНИСТРАТОРОВ ============
+
+# Получение всех пользователей
 @admin_router.get("/users")
 async def get_all_users(
         session: sessionDep,
@@ -200,7 +197,7 @@ async def get_all_users(
     result = await session.execute(stmt)
     users = result.scalars().all()
 
-    # Форматируем ответ
+
     return [
         {
             "id": user.id,
@@ -212,14 +209,13 @@ async def get_all_users(
         for user in users
     ]
 
-
+# Получение пользователя по id
 @admin_router.get("/users/{user_id}")
 async def get_user_by_id(
         user_id: int,
         session: sessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
-    """Получение информации о любом пользователе по ID"""
     stmt = select(UserModel).where(UserModel.id == user_id)
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
@@ -239,6 +235,7 @@ async def get_user_by_id(
     }
 
 
+# Обновление роли пользователя
 @admin_router.put("/users/{user_id}/role")
 async def change_user_role(
         user_id: int,
@@ -246,8 +243,7 @@ async def change_user_role(
         session: sessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
-    """Изменение роли пользователя (только для администраторов)"""
-    # Администратор не может изменить свою собственную роль
+
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -276,14 +272,14 @@ async def change_user_role(
     }
 
 
+# Удаление пользователей по id
 @admin_router.delete("/users/{user_id}")
 async def delete_user(
         user_id: int,
         session: sessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
-    """Удаление любого пользователя (только для администраторов)"""
-    # Администратор не может удалить себя
+
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -309,13 +305,14 @@ async def delete_user(
     }
 
 
+# Получение статистики
 @admin_router.get("/statistics")
 async def get_statistics(
         session: sessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
-    """Статистика пользователей (только для администраторов)"""
-    # Общее количество пользователей
+
+
     total_users_stmt = select(UserModel)
     total_users_result = await session.execute(total_users_stmt)
     total_users = len(total_users_result.scalars().all())
