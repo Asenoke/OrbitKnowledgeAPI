@@ -9,15 +9,15 @@ from app.db.database import get_session
 from app.db.models import UserModel, UserRole
 from app.security.security import hash_password, verify_password, create_access_token
 from app.user.schema import UserAddSchema, UserLoginSchema, UserUpdateSchema
-from app.dependencies.dependencies import get_current_user, require_admin, require_user
+from app.dependencies.dependencies import get_current_user, require_admin, require_admin_or_user
 
 # Публичные роутеры (доступны всем)
 public_router = APIRouter(prefix="/user", tags=["Публичные методы"])
 
-# Роутеры для обычных пользователей
-user_router = APIRouter(prefix="/user", tags=["Методы пользователя"], dependencies=[Depends(require_user)])
+# Роутеры для обычных пользователей и администраторов (оба могут получить доступ)
+user_router = APIRouter(prefix="/user", tags=["Методы пользователя"], dependencies=[Depends(require_admin_or_user)])
 
-# Роутеры для администраторов
+# Роутеры только для администраторов
 admin_router = APIRouter(prefix="/user/admin", tags=["Методы администратора"], dependencies=[Depends(require_admin)])
 
 sessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -110,7 +110,7 @@ async def logout():
     }
 
 
-# ============ ЭНДПОИНТЫ ДЛЯ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ ============
+# ============ ЭНДПОИНТЫ ДЛЯ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ И АДМИНОВ ============
 
 @user_router.get("/profile")
 async def get_profile(current_user: UserModel = Depends(get_current_user)):
@@ -127,8 +127,9 @@ async def get_profile(current_user: UserModel = Depends(get_current_user)):
 @user_router.put("/profile")
 async def update_profile(
         update_data: UserUpdateSchema,
+        session: sessionDep,
         current_user: UserModel = Depends(get_current_user),
-        session: sessionDep = None
+
 ):
     """Обновление профиля пользователя"""
     # Обновляем только предоставленные поля
@@ -172,8 +173,9 @@ async def update_profile(
 
 @user_router.delete("/profile")
 async def delete_profile(
-        current_user: UserModel = Depends(get_current_user),
-        session: sessionDep = None
+        session: sessionDep,
+        current_user: UserModel = Depends(get_current_user)
+
 ):
     """Удаление своего профиля"""
     await session.delete(current_user)
@@ -185,7 +187,7 @@ async def delete_profile(
     }
 
 
-# ============ ЭНДПОИНТЫ ДЛЯ АДМИНИСТРАТОРОВ ============
+# ============ ЭНДПОИНТЫ ТОЛЬКО ДЛЯ АДМИНИСТРАТОРОВ ============
 @admin_router.get("/users")
 async def get_all_users(
         session: sessionDep,

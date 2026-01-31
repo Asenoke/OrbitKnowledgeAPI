@@ -2,7 +2,7 @@ from typing import Optional, List
 import enum
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Column, Integer, String, Enum as SQLEnum, Text, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Enum as SQLEnum, Text, JSON
 
 
 class Base(DeclarativeBase):
@@ -36,7 +36,7 @@ class HeroModel(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     image_url: Mapped[Optional[str]] = mapped_column(String(500))
     era: Mapped[str] = mapped_column(String(50), nullable=False, default="XX век")
-    tags: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)  # ["космонавт", "СССР", "рекорд"]
+    tags: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
 
     # Для модального окна
     birth_date: Mapped[Optional[str]] = mapped_column(String(50))

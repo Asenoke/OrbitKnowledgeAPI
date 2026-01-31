@@ -17,15 +17,18 @@ app.include_router(user_router)
 app.include_router(line_event_router)
 app.include_router(hero_router)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup():
     await create_db()
 
-CORSMiddleware(
-    app,
-    allow_origins=["*"],
-)
 
 def main():
     uvicorn.run("main:app", port=8000)
