@@ -1,8 +1,7 @@
 from typing import Optional
-
 from pydantic import BaseModel, Field, field_validator
 
-
+# Схема для добавления нового события ленты времени
 class LineEventAddSchema(BaseModel):
     year: int = Field(...)
     title: str = Field(..., max_length=200)
@@ -15,7 +14,7 @@ class LineEventAddSchema(BaseModel):
             raise ValueError('Год должен быть в диапазоне от 1000 до 3000')
         return v
 
-
+# Схема для обновления события ленты времени
 class LineEventUpdateSchema(BaseModel):
     year: Optional[int] = Field(None, description="Год события")
     title: Optional[str] = Field(None, max_length=200, description="Заголовок события")

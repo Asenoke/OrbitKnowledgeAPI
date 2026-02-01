@@ -7,17 +7,18 @@ from app.db.models import UserModel, UserRole
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-# создание экземпляра HTTPBearer
+# Создание экземпляра HTTPBearer для работы с Bearer токенами
 security = HTTPBearer()
 
-# Функция (зависимость) для получения текущего пользователя
+# Функция-зависимость для получения текущего пользователя по токену
 async def get_current_user(
         credentials=Depends(security),
         session: AsyncSession = Depends(get_session)
 ) -> UserModel:
-
+    # Извлечение токена из заголовков
     token = credentials.credentials
 
+    # Верификация токена
     payload = verify_token(token)
     if not payload:
         raise HTTPException(
@@ -26,6 +27,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"}
         )
 
+    # Извлечение user_id из payload токена
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(
@@ -33,6 +35,7 @@ async def get_current_user(
             detail="Неверные данные в токене"
         )
 
+    # Поиск пользователя в базе данных
     stmt = select(UserModel).where(UserModel.id == user_id)
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
@@ -45,7 +48,7 @@ async def get_current_user(
 
     return user
 
-# функция (зависимость) для проверки роли
+# Функция-зависимость для проверки конкретной роли пользователя
 def require_role(required_role: UserRole):
     async def role_checker(current_user: UserModel = Depends(get_current_user)):
         if current_user.role != required_role:
@@ -57,8 +60,7 @@ def require_role(required_role: UserRole):
 
     return role_checker
 
-
-# Функция проверки на одну из нескольких ролей
+# Функция-зависимость для проверки нескольких ролей
 def require_any_role(allowed_roles: List[UserRole]):
     async def role_checker(current_user: UserModel = Depends(get_current_user)):
         if current_user.role not in allowed_roles:
@@ -70,8 +72,7 @@ def require_any_role(allowed_roles: List[UserRole]):
 
     return role_checker
 
-
-# Объявление
+# Предопределенные зависимости для частых случаев использования
 require_admin = require_role(UserRole.ADMIN)
 require_user = require_role(UserRole.USER)
 require_admin_or_user = require_any_role([UserRole.ADMIN, UserRole.USER])

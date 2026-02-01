@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.params import Query
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Annotated
 from starlette import status
 
-from app.db.database import get_session
+
+from app import SessionDep
 from app.db.models import UserModel, UserRole
 from app.security.security import hash_password, verify_password, create_access_token
 from app.user.schema import UserAddSchema, UserLoginSchema, UserUpdateSchema
@@ -20,14 +19,14 @@ user_router = APIRouter(prefix="/user", tags=["Методы пользовате
 # Роутеры только для администраторов
 admin_router = APIRouter(prefix="/user/admin", tags=["Методы администратора"], dependencies=[Depends(require_admin)])
 
-sessionDep = Annotated[AsyncSession, Depends(get_session)]
+
 
 
 # ============ ПУБЛИЧНЫЕ ЭНДПОИНТЫ (доступны всем) ============
 
 # Регистрация нового пользователя (по умолчанию роль USER)
 @public_router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(user: UserAddSchema, session: sessionDep):
+async def register(user: UserAddSchema, session: SessionDep):
     existing_user = await session.execute(
         select(UserModel).where(UserModel.email == user.email)
     )
@@ -68,7 +67,7 @@ async def register(user: UserAddSchema, session: sessionDep):
 
 # Вход в систему
 @public_router.post("/login")
-async def login(user: UserLoginSchema, session: sessionDep):
+async def login(user: UserLoginSchema, session: SessionDep):
     stmt = select(UserModel).where(UserModel.email == user.email)
     result = await session.execute(stmt)
     db_user = result.scalar_one_or_none()
@@ -123,7 +122,7 @@ async def get_profile(current_user: UserModel = Depends(get_current_user)):
 @user_router.put("/profile")
 async def update_profile(
         update_data: UserUpdateSchema,
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(get_current_user),
 
 ):
@@ -168,7 +167,7 @@ async def update_profile(
 # Удаление учётной записи пользователя
 @user_router.delete("/profile")
 async def delete_profile(
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(get_current_user)
 
 ):
@@ -187,7 +186,7 @@ async def delete_profile(
 # Получение всех пользователей
 @admin_router.get("/users")
 async def get_all_users(
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(require_admin),
         skip: int = Query(0, ge=0),
         limit: int = Query(100, ge=1, le=1000)
@@ -213,7 +212,7 @@ async def get_all_users(
 @admin_router.get("/users/{user_id}")
 async def get_user_by_id(
         user_id: int,
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
     stmt = select(UserModel).where(UserModel.id == user_id)
@@ -240,7 +239,7 @@ async def get_user_by_id(
 async def change_user_role(
         user_id: int,
         new_role: UserRole,
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
 
@@ -276,7 +275,7 @@ async def change_user_role(
 @admin_router.delete("/users/{user_id}")
 async def delete_user(
         user_id: int,
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
 
@@ -308,7 +307,7 @@ async def delete_user(
 # Получение статистики
 @admin_router.get("/statistics")
 async def get_statistics(
-        session: sessionDep,
+        session: SessionDep,
         current_user: UserModel = Depends(require_admin)
 ):
 
